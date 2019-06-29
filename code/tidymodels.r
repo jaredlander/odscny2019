@@ -58,3 +58,48 @@ train_baked <- man_prepped %>% bake(new_data=man_train)
 test_baked <- man_prepped %>% bake(new_data=man_test)
 
 pryr::object_size(man_prepped)
+
+xgmod <- boost_tree(mode='regression') %>% 
+    set_engine('xgboost')
+xgmod
+
+mod2 <- xgmod %>% 
+    fit(TotalValue ~ ., data=train_baked)
+mod2
+mod2$fit
+
+library(xgboost)
+
+mod2$fit %>% 
+    xgb.plot.multi.trees()
+
+mod2$fit %>% 
+    xgb.importance(model=.) %>% 
+    `[`(1:15) %>% 
+    xgb.plot.importance()
+
+library(RXKCD)
+getXKCD(927)
+
+mod3 <- boost_tree(mode='regression', 
+                   trees=130,
+                   tree_depth=4,
+                   learn_rate=0.25
+) %>% 
+    set_engine('xgboost') %>% 
+    fit(TotalValue ~ ., data=train_baked)
+
+rand_forest
+linear_reg
+logistic_reg
+
+preds3 <- predict(mod3, new_data=test_baked)
+preds3
+
+truepred3 <- test_baked %>% 
+    dplyr::select(TotalValue) %>% 
+    dplyr::bind_cols(preds3)
+
+library(yardstick)
+
+rmse(truepred3, truth=TotalValue, estimate=.pred)
